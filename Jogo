@@ -1,0 +1,161 @@
+import random
+import tkinter as tk
+from tkinter import messagebox
+
+def gerar_proposicoes():
+    return [
+        '(P ∨ Q)',
+        '(P ∧ Q)',
+        '(P → Q)',
+        '(¬P ∨ Q)',
+        '(P ∨ ¬Q)',
+        '(P ∧ ¬Q)',
+        '(¬P ∧ Q)',
+        '(¬P → ¬Q)',
+    ]
+
+def avaliar_proposicao(proposicao, valores):
+    P, Q = valores['P'], valores['Q']
+    if proposicao == '(P ∨ Q)':
+        return P or Q
+    elif proposicao == '(P ∧ Q)':
+        return P and Q
+    elif proposicao == '(P → Q)':
+        return not P or Q
+    elif proposicao == '(¬P ∨ Q)':
+        return not P or Q
+    elif proposicao == '(P ∨ ¬Q)':
+        return P or not Q
+    elif proposicao == '(P ∧ ¬Q)':
+        return P and not Q
+    elif proposicao == '(¬P ∧ Q)':
+        return not P and Q
+    elif proposicao == '(¬P → ¬Q)':
+        return not P or not Q
+
+def gerar_tabela_verdade(proposicao):
+    valores_P = [True, True, False, False]
+    valores_Q = [True, False, True, False]
+    resultados = []
+    for P, Q in zip(valores_P, valores_Q):
+        valores = {'P': P, 'Q': Q}
+        resultado = avaliar_proposicao(proposicao, valores)
+        resultados.append((P, Q, resultado))
+    return resultados
+
+def formatar_tabela_verdade(tabela):
+    resultado_texto = "P     | Q     | Resultado\n"
+    resultado_texto += "-" * 23 + "\n"
+    for linha in tabela:
+        P, Q, resultado = linha
+        resultado_texto += f"{'V' if P else 'F'}     | {'V' if Q else 'F'}     | {'V' if resultado else 'F'}\n"
+    return resultado_texto
+
+def mostrar_ajuda():
+    texto_ajuda = (
+        "Aqui estão alguns conceitos importantes sobre proposições lógicas:\n\n"
+        "1. Disjunção (P ∨ Q): Verdadeira se pelo menos uma das proposições for verdadeira.\n"
+        "2. Conjunção (P ∧ Q): Verdadeira apenas se ambas as proposições forem verdadeiras.\n"
+        "3. Condicional (P → Q): Falsa se P for verdadeira e Q for falsa; caso contrário, verdadeira.\n"
+        "4. Negação da Disjunção (¬P ∨ Q): Verdadeira se P for falsa ou Q for verdadeira.\n"
+        "5. Disjunção com Negação (P ∨ ¬Q): Verdadeira se P for verdadeira ou Q for falsa.\n"
+        "6. Conjunção com Negação (P ∧ ¬Q): Verdadeira se P for verdadeira e Q for falsa.\n"
+        "7. Conjunção de Negações (¬P ∧ Q): Verdadeira se P for falsa e Q for verdadeira.\n"
+        "8. Negação Condicional (¬P → ¬Q): Verdadeira se P for falsa ou Q for falsa.\n"
+    )
+
+    messagebox.showinfo("Ajuda", texto_ajuda)
+
+class LogicaAventuraApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Lógica Aventura")
+
+        self.pontuacao = 0
+        self.perguntas_respondidas = 0
+
+        self.introducao = tk.Label(root, text="Bem-vindo ao Lógica Aventura!\nIdentifique a proposição correta baseada na tabela-verdade.", font=("Helvetica", 14), pady=10)
+        self.introducao.pack()
+
+        self.tabela_verdade_text = tk.Text(root, height=10, width=40, font=("Courier", 12))
+        self.tabela_verdade_text.pack(pady=10)
+
+        self.opcoes_label = tk.Label(root, text="Escolha a proposição correta:", font=("Helvetica", 12), pady=5)
+        self.opcoes_label.pack()
+
+        self.opcoes_var = tk.StringVar(value="")
+
+        self.opcoes_frame = tk.Frame(root)
+        self.opcoes_frame.pack(pady=5)
+
+        self.opcoes_buttons = []
+        for i in range(4):
+            btn = tk.Radiobutton(self.opcoes_frame, text="", variable=self.opcoes_var, value="", font=("Helvetica", 12))
+            btn.pack(anchor="w")
+            self.opcoes_buttons.append(btn)
+
+        self.verificar_btn = tk.Button(root, text="Verificar Resposta", command=self.verificar_resposta, font=("Helvetica", 12), bg="#2196F3", fg="white", pady=5)
+        self.verificar_btn.pack(pady=10)
+
+        self.resultado_label = tk.Label(root, text="", font=("Helvetica", 12))
+        self.resultado_label.pack(pady=10)
+
+        self.acertos_label = tk.Label(root, text="Acertos: 0", font=("Helvetica", 12))
+        self.acertos_label.pack(pady=10)
+
+        self.ajuda_btn = tk.Button(root, text="Ajuda", command=mostrar_ajuda, font=("Helvetica", 12), bg="#FF5722", fg="white", pady=5)
+        self.ajuda_btn.pack(pady=10)
+
+        self.nova_rodada()
+
+    def nova_rodada(self):
+        proposicoes = gerar_proposicoes()
+        self.proposicao_correta = random.choice(proposicoes)
+        tabela = gerar_tabela_verdade(self.proposicao_correta)
+        tabela_texto = formatar_tabela_verdade(tabela)
+
+        self.tabela_verdade_text.delete(1.0, tk.END)
+        self.tabela_verdade_text.insert(tk.END, tabela_texto)
+
+        alternativas = random.sample(proposicoes, 3)
+        if self.proposicao_correta not in alternativas:
+            alternativas.append(self.proposicao_correta)
+        random.shuffle(alternativas)
+
+        for i, prop in enumerate(alternativas):
+            self.opcoes_buttons[i].config(text=prop, value=prop)
+
+        self.opcoes_var.set("")  # Limpa a seleção anterior
+
+        self.resultado_label.config(text="")
+
+    def verificar_resposta(self):
+        resposta_escolhida = self.opcoes_var.get()
+        if resposta_escolhida == self.proposicao_correta:
+            self.pontuacao += 1
+            self.resultado_label.config(text="Correto!", fg="green")
+        else:
+            self.resultado_label.config(text=f"Errado! A resposta correta era {self.proposicao_correta}.", fg="red")
+
+        self.acertos_label.config(text=f"Acertos: {self.pontuacao}")
+        self.perguntas_respondidas += 1
+
+        if self.perguntas_respondidas >= 10:
+            self.exibir_resultado_final()
+        else:
+            self.root.after(1500, self.nova_rodada)  # Aguarda 1,5 segundos antes de iniciar a próxima rodada
+
+    def exibir_resultado_final(self):
+        if self.pontuacao >= 7:
+            mensagem = f"Parabéns! Você acertou {self.pontuacao} questões. Excelente trabalho!"
+        elif self.pontuacao >= 5:
+            mensagem = f"Bom trabalho! Você acertou {self.pontuacao} questões. Continue praticando!"
+        else:
+            mensagem = f"Você acertou {self.pontuacao} questões. Não desanime, continue estudando!"
+
+        messagebox.showinfo("Resultado Final", mensagem)
+        self.root.quit()
+
+root = tk.Tk()
+app = LogicaAventuraApp(root)
+root.mainloop()
